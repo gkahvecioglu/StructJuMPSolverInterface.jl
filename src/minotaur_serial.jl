@@ -36,7 +36,8 @@ type NonStructJuMPModel <: ModelInterface
     eval_grad_f::Function
     eval_jac_g::Function
     eval_h::Function
-
+    num_cons_type::Function	# returns the number of each constraint type, i.e., linear, quadratic, sos, nonlinear
+	
     function NonStructJuMPModel(model)
         instance = new(model, 
             Vector{Int}(), Vector{Int}(), Vector{Int}(), Vector{Int}(),
@@ -343,6 +344,21 @@ type NonStructJuMPModel <: ModelInterface
 
             offset += getNumVars(m,i)
         end
+        
+	instance.num_cons_type = function()
+		m = instance.model
+		nb_linearconstr = length(m.linconstr)
+		nb_quadconstr = length(m.quadconstr)
+		nb_sosconstr = length(m.sosconstr)
+		
+		nb_nlconstr = 0
+		if m.nlpdata !== nothing
+        		nb_nlconstr = length(m.nlpdata.nlconstr)
+    		end
+			
+		return nb_linearconstr, nb_quadconstr, nb_sosconstr, nb_nlconstr
+	end 
+	
         return instance  
     end
 end
