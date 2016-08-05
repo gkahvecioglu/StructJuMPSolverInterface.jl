@@ -37,7 +37,9 @@ type NonStructJuMPModel <: ModelInterface
     eval_jac_g::Function
     eval_h::Function
     num_cons_type::Function	# returns the number of each constraint type, i.e., linear, quadratic, sos, nonlinear
-	
+    linear_obj::Function 	# returns the list of tuples, i.e., (coeff, variable)
+    linear_const::Function	# returns array of linear constraints 	
+		
     function NonStructJuMPModel(model)
         instance = new(model, 
             Vector{Int}(), Vector{Int}(), Vector{Int}(), Vector{Int}(),
@@ -359,7 +361,26 @@ type NonStructJuMPModel <: ModelInterface
 		return nb_linearconstr, nb_quadconstr, nb_sosconstr, nb_nlconstr
 	end 
 	
-        return instance  
+	instance.linear_obj = function()
+		m = instance.model 
+		lin_obj_expr = JuMP.getobjective(m)
+		lin_obj = collect(JuMP.linearterms(lin_obj.aff))
+		@show typeof(lin_obj)
+		return lin_obj
+	end
+
+	instance.linear_const = function()
+		m = instance.model
+		linear_cons = m.linearconstr
+		linear_cons_expr = Vector{JuMP.AffExpr}(length(linear_cons))
+		for id = 1:length(linear_cons)
+			cons = linear_cons[id]
+			linear_cons_expr[id] = collect(JuMP.linearterms(cons.terms))
+		end	
+		return linear_cons_expr
+	end	
+        
+	return instance  
     end
 end
 
