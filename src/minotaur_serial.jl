@@ -38,7 +38,8 @@ type NonStructJuMPModel <: ModelInterface
     eval_h::Function
     num_cons_type::Function	# returns the number of each constraint type, i.e., linear, quadratic, sos, nonlinear
     linear_obj::Function 	# returns the list of tuples, i.e., (coeff, variable)
-    linear_const::Function	# returns array of linear constraints 	
+    linear_const::Function	# returns array of linear constraints 
+    has_nl_obj::Function    # returns boolean whether the objective function is nonlinear or not 	
 		
     function NonStructJuMPModel(model)
         instance = new(model, 
@@ -347,39 +348,47 @@ type NonStructJuMPModel <: ModelInterface
             offset += getNumVars(m,i)
         end
         
-	instance.num_cons_type = function()
-		m = instance.model
-		nb_linearconstr = length(m.linconstr)
-		nb_quadconstr = length(m.quadconstr)
-		nb_sosconstr = length(m.sosconstr)
+	    instance.num_cons_type = function()
+	        m = instance.model
+	        nb_linearconstr = length(m.linconstr)
+		    nb_quadconstr = length(m.quadconstr)
+		    nb_sosconstr = length(m.sosconstr)
 		
-		nb_nlconstr = 0
-		if m.nlpdata !== nothing
-        		nb_nlconstr = length(m.nlpdata.nlconstr)
-    		end
+		    nb_nlconstr = 0
+		    if m.nlpdata !== nothing
+                nb_nlconstr = length(m.nlpdata.nlconstr)
+    	    end
 			
-		return nb_linearconstr, nb_quadconstr, nb_sosconstr, nb_nlconstr
-	end 
+	        return nb_linearconstr, nb_quadconstr, nb_sosconstr, nb_nlconstr
+	    end 
 	
-	instance.linear_obj = function()
-		m = instance.model 
-		lin_obj_expr = JuMP.getobjective(m)
-		lin_obj = collect(JuMP.linearterms(lin_obj.aff))
-		@show typeof(lin_obj)
-		return lin_obj
-	end
+	    instance.linear_obj = function()
+		  m = instance.model 
+		  lin_obj_expr = JuMP.getobjective(m)
+		  lin_obj = collect(JuMP.linearterms(lin_obj.aff))
+		  @show typeof(lin_obj)
+		  return lin_obj
+	    end
 
-	instance.linear_const = function()
-		m = instance.model
-		linear_cons = m.linearconstr
-		linear_cons_expr = Vector{JuMP.AffExpr}(length(linear_cons))
-		for id = 1:length(linear_cons)
-			cons = linear_cons[id]
-			linear_cons_expr[id] = collect(JuMP.linearterms(cons.terms))
-		end	
-		return linear_cons_expr
-	end	
+	    instance.linear_const = function()
+		  m = instance.model
+		  linear_cons = m.linearconstr
+		  linear_cons_expr = Vector{JuMP.AffExpr}(length(linear_cons))
+		  for id = 1:length(linear_cons)
+			 cons = linear_cons[id]
+			 linear_cons_expr[id] = collect(JuMP.linearterms(cons.terms))
+		   end	
+		   return linear_cons_expr
+	    end	
         
+
+        instance.has_nl_obj = function()
+            m = instance.model
+            nldata::JuMP.NLPData = m.nlpdata
+            has_nlobj = isa(nldata.nlobj, JuMP.NonlinearExprData)
+            return has_nlpobj
+        end
+
 	return instance  
     end
 end
@@ -397,6 +406,9 @@ function structJuMPSolve(model; suppress_warmings=false,kwargs...)
     m = getTotalNumCons(model)
     nele_jac = nm.nele_jac()
     nele_hess = nm.nele_hess()
+    
+    nl_obj = nm.has_nlobj() # true if model has nl objective 
+    nb_obj = 1              #! for now, set it to 1 but construct a function later.. 
 
     # @show x_L, x_U
     # @show g_L, g_U
@@ -404,6 +416,7 @@ function structJuMPSolve(model; suppress_warmings=false,kwargs...)
     # @show nele_jac,nele_hess
 
     prob = MinotaurSolverSerial.createProblem(n, m, x_L, x_U, g_L, g_U, nele_jac, nele_hess,
+                         nl_obj, nb_obj, 
                          nm.eval_f, nm.eval_g, nm.eval_grad_f, nm.eval_jac_g, nm.eval_h)
     # setProblemScaling(prob,1.0)
     nm.get_x0(prob.x)
