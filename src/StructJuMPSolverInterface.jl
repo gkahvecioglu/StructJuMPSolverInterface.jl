@@ -174,7 +174,4 @@ end
 
 end # module StructJuMPSolverInterface
 
-
-include("pips_parallel.jl")
-include("pips_serial.jl")
-include("ipopt_serial.jl")
+include("minotaur_serial.jl")

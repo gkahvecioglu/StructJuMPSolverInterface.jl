@@ -386,7 +386,7 @@ type NonStructJuMPModel <: ModelInterface
             m = instance.model
             nldata::JuMP.NLPData = m.nlpdata
             has_nlobj = isa(nldata.nlobj, JuMP.NonlinearExprData)
-            return has_nlpobj
+            return has_nlobj
         end
 
 	return instance  
@@ -407,7 +407,7 @@ function structJuMPSolve(model; suppress_warmings=false,kwargs...)
     nele_jac = nm.nele_jac()
     nele_hess = nm.nele_hess()
     
-    nl_obj = nm.has_nlobj() # true if model has nl objective 
+    nl_obj = nm.has_nl_obj() # true if model has nl objective 
     nb_obj = 1              #! for now, set it to 1 but construct a function later.. 
 
     # @show x_L, x_U

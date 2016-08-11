@@ -125,14 +125,14 @@ function eval_h_wrapper(x_ptr::Ptr{Float64}, lambda_ptr::Ptr{Float64}, values_pt
         mode = (values_ptr == C_NULL) ? (:Structure) : (:Values)
         x = pointer_to_array(x_ptr, prob.n)
         lambda = pointer_to_array(lambda_ptr, prob.m)
-        irows = pointer_to_array(iRow, Int(prob.nzHess))
-        kcols = pointer_to_array(jCol, Int(prob.n+1))
+        rows = pointer_to_array(iRow, Int(prob.nzHess))
+        cols = pointer_to_array(jCol, Int(prob.n+1))
         values = pointer_to_array(values_ptr, Int(prob.nzHess))
         obj_factor = 1.0
         if prob.sense == :Max
             obj_factor *= -1.0
         end
-        prob.eval_h(x, mode, irows, kcols, obj_factor, lambda, values)
+        prob.eval_h(x, mode, rows, cols, obj_factor, lambda, values)
         if mode == :Structure
             convert_to_c_idx(irows)
             convert_to_c_idx(kcols)
