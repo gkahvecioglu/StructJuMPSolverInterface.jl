@@ -52,7 +52,6 @@ end
 ###########################################################################
 # Objective (eval_f)
 function eval_f_wrapper(x_ptr::Ptr{Float64}, obj_ptr::Ptr{Float64}, user_data::Ptr{Void})
-    # println(" julia - eval_f_wrapper " ); 
     # Extract Julia the problem from the pointer
     prob = unsafe_pointer_to_objref(user_data)::MinotaurProblem
     # Calculate the new objective
@@ -155,8 +154,8 @@ function createProblem(n::Int,m::Int,
 
     @assert n == length(x_L) == length(x_U)
     @assert m == length(g_L) == length(g_U)
-    eval_f_cb = cfunction(eval_f_wrapper,Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Void}) )
-    eval_g_cb = cfunction(eval_g_wrapper,Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Void}) )
+    eval_f_cb = cfunction(eval_f_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Void}) )
+    eval_g_cb = cfunction(eval_g_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Void}) )
     eval_grad_f_cb = cfunction(eval_grad_f_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Void}) )
     eval_jac_g_cb = cfunction(eval_jac_g_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Void}))
     eval_h_cb = cfunction(eval_h_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Void}))
