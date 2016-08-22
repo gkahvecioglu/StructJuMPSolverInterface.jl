@@ -39,9 +39,10 @@ type NonStructJuMPModel <: ModelInterface
     num_cons_type::Function	# returns the number of each constraint type, i.e., linear, quadratic, sos, nonlinear
     linear_obj::Function 	# returns the list of tuples, i.e., (coeff, variable)
     linear_const::Function	# returns array of linear constraints 
-    has_nl_obj::Function    # returns boolean whether the objective function is nonlinear or not 	
-    objective_sense::Function # returns obj sense integer wise 			
-    
+    has_nl_obj::Function        # returns boolean whether the objective function is nonlinear or not 	
+    objective_sense::Function   # returns obj sense integer wise 			
+    variable_type::Function 	# returns type of variables, i.e., Integer, Binary, Continuous. 
+ 
     function NonStructJuMPModel(model)
         instance = new(model, 
             Vector{Int}(), Vector{Int}(), Vector{Int}(), Vector{Int}(),
@@ -400,6 +401,12 @@ type NonStructJuMPModel <: ModelInterface
 	    end
 	    return ret 	
 	end 
+
+        instance.variable_type = function()
+		m = instance.model
+		return m.colCat
+	end
+
 	return instance  
     end
 end

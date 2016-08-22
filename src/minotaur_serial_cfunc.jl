@@ -161,11 +161,11 @@ function createProblem(n::Int,m::Int,
     eval_jac_g_cb = cfunction(eval_jac_g_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Void}))
     eval_h_cb = cfunction(eval_h_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Void}))
     
-    # create environment first 
+    # create Minotaur Environment API  
     env = ccall((:createEnv, "libminotaur_shared"),  Ptr{Void}, ())
     
-    @show env
-    # loads problem parameters to Julia Interface  
+ 
+    # load problem parameters to Julia Interface  
     ccall((:loadJuliaInterface, "libminotaur_shared"), Void, (Ptr{Void}, Cint, Cint, 
     Ptr{Float64}, Ptr{Float64},
     Ptr{Float64}, Ptr{Float64}, 
@@ -175,27 +175,23 @@ function createProblem(n::Int,m::Int,
     x_L, x_U, 
     g_L, g_U , 
     nzJac, nzHess, 
+    obj_sense, 
     is_nl_obj, nb_obj)
     
-    @show "loadJuliaProblem"
     # set callback functions 
     ccall((:setCallbacks, "libminotaur_shared"), Void, 
                                                 (Ptr{Void}, Ptr{Void}, Ptr{Void},
                                                  Ptr{Void}, Ptr{Void}, Ptr{Void}), 
                                                  env, eval_f_cb, eval_g_cb, 
                                                  eval_grad_f_cb, eval_jac_g_cb, eval_h_cb)
-                                                 
-    @show " ccall CreateMinotaurProblem done"
-    #ref = ret 
-   
-    #@show ret->varUB[1]
-    #@show "ccall"
-    #if ret == C_NULL
-     #   error("Minotaur: Failed to construct problem.")
+    
+   # if env == C_NULL
+    #   error("Minotaur: Failed to construct problem.")
     #else
      #   return(MinotaurProblem(ret, n, m, eval_f, eval_g, eval_grad_f, eval_jac_g, eval_h, nzJac, nzHess))
     #end
-    return Int32(1)
+    
+     return Int32(1)
 end
 
 function solveProblem(prob::MinotaurProblem)
