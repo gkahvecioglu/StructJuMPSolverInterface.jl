@@ -40,7 +40,8 @@ type NonStructJuMPModel <: ModelInterface
     linear_obj::Function 	# returns the list of tuples, i.e., (coeff, variable)
     linear_const::Function	# returns array of linear constraints 
     has_nl_obj::Function    # returns boolean whether the objective function is nonlinear or not 	
-		
+    objective_sense::Function # returns obj sense integer wise 			
+    
     function NonStructJuMPModel(model)
         instance = new(model, 
             Vector{Int}(), Vector{Int}(), Vector{Int}(), Vector{Int}(),
@@ -389,6 +390,16 @@ type NonStructJuMPModel <: ModelInterface
             return has_nlobj
         end
 
+	instance.objective_sense = function()
+	    m = instance.model
+	    obj_sense = getobjectivesense(m)
+	    if obj_sense == :Min
+		ret = 1  
+	    else
+		ret = -1 
+	    end
+	    return ret 	
+	end 
 	return instance  
     end
 end
@@ -406,7 +417,8 @@ function structJuMPSolve(model; suppress_warmings=false,kwargs...)
     m = getTotalNumCons(model)
     nele_jac = nm.nele_jac()
     nele_hess = nm.nele_hess()
-    
+    obj_sense = nm.objective_sense()
+
     nl_obj = nm.has_nl_obj() # true if model has nl objective 
     nb_obj = 1              #! for now, set it to 1 but construct a function later.. 
 
@@ -416,14 +428,15 @@ function structJuMPSolve(model; suppress_warmings=false,kwargs...)
     # @show nele_jac,nele_hess
 
     prob = MinotaurSolverSerial.createProblem(n, m, x_L, x_U, g_L, g_U, nele_jac, nele_hess,
-                         nl_obj, nb_obj, 
+                         obj_sense, nl_obj, nb_obj, 
                          nm.eval_f, nm.eval_g, nm.eval_grad_f, nm.eval_jac_g, nm.eval_h)
     # setProblemScaling(prob,1.0)
-    nm.get_x0(prob.x)
-    status = MinotaurSolverSerial.solveProblem(prob)
-    nm.write_solution(prob.x)
+    #nm.get_x0(prob.x)
+    #status = MinotaurSolverSerial.solveProblem(prob)
+    #nm.write_solution(prob.x)
     
-    return PIPSRetCodeToSolverInterfaceCode[status]
+    return Int32(1)
+    #return PIPSRetCodeToSolverInterfaceCode[status]
 end
 
 

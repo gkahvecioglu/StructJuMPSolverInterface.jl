@@ -1,4 +1,4 @@
-#
+e
 # Wrapper for the serial Minotaur interface
 #
 
@@ -149,6 +149,7 @@ function createProblem(n::Int,m::Int,
     x_L::Vector{Float64},x_U::Vector{Float64},
     g_L::Vector{Float64},g_U::Vector{Float64},
     nzJac::Int, nzHess::Int, 
+    obj_sense::Int,
     is_nl_obj::Bool, nb_obj::Int, 
     eval_f, eval_g,eval_grad_f,eval_jac_g,eval_h)
 
@@ -159,15 +160,13 @@ function createProblem(n::Int,m::Int,
     eval_grad_f_cb = cfunction(eval_grad_f_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Void}) )
     eval_jac_g_cb = cfunction(eval_jac_g_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Void}))
     eval_h_cb = cfunction(eval_h_wrapper, Cint, (Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Cint}, Ptr{Cint}, Ptr{Void}))
-   
-    # create environment first 
-    env = ccall((:createEnv, "libminotaur_shared"), Ptr{UInt8}, ())
     
-    # return problem pointer 
-    problem_ptr = ccall((:getProblemPtr, "libminotaur_shared"), Ptr{UInt8}, () )  
-
-    # creates Julia Interface  
-    iface = ccall((:setJuliaInterface, "libminotaur_shared"), Ptr{UInt8}, (Ptr{UInt8}, Cint, Cint, 
+    # create environment first 
+    env = ccall((:createEnv, "libminotaur_shared"),  Ptr{Void}, ())
+    
+    @show env
+    # loads problem parameters to Julia Interface  
+    ccall((:loadJuliaInterface, "libminotaur_shared"), Void, (Ptr{Void}, Cint, Cint, 
     Ptr{Float64}, Ptr{Float64},
     Ptr{Float64}, Ptr{Float64}, 
     Cint, Cint, 
@@ -178,38 +177,25 @@ function createProblem(n::Int,m::Int,
     nzJac, nzHess, 
     is_nl_obj, nb_obj)
     
-    #=ret = ccall((:CreateJuliaProblemStruct,"libminotaur_shared"),Ptr{Void},
-            (Cint, Cint,
-            Ptr{Float64}, Ptr{Float64},
-            Ptr{Float64}, Ptr{Float64},
-            Cint, Cint,
-            Ptr{Void},Ptr{Void},
-            Ptr{Void},Ptr{Void}, Ptr{Void}),
-            n,m,
-            x_L,x_U,
-            g_L,g_U,
-            nzJac, nzHess,
-            eval_f_cb, eval_g_cb,
-            eval_grad_f_cb, eval_jac_g_cb, eval_h_cb
-            ) =#
-    
+    @show "loadJuliaProblem"
     # set callback functions 
-    ccall((:setCallbacks, "libminotaur_shared"), Ptr{Void}, 
-                                                (Ptr{Void},Ptr{Void},
-                                                 Ptr{Void},Ptr{Void}, Ptr{Void}), 
-                                                 eval_f_cb, eval_g_cb, 
+    ccall((:setCallbacks, "libminotaur_shared"), Void, 
+                                                (Ptr{Void}, Ptr{Void}, Ptr{Void},
+                                                 Ptr{Void}, Ptr{Void}, Ptr{Void}), 
+                                                 env, eval_f_cb, eval_g_cb, 
                                                  eval_grad_f_cb, eval_jac_g_cb, eval_h_cb)
                                                  
-    println(" ccall CreateMinotaurProblem done ")
-    # ref = ret 
+    @show " ccall CreateMinotaurProblem done"
+    #ref = ret 
    
-    @show ret->varUB[1]
-    @show "ccall"
-    if ret == C_NULL
-        error("Minotaur: Failed to construct problem.")
-    else
-        return(MinotaurProblem(ret, n, m, eval_f, eval_g, eval_grad_f, eval_jac_g, eval_h, nzJac, nzHess))
-    end
+    #@show ret->varUB[1]
+    #@show "ccall"
+    #if ret == C_NULL
+     #   error("Minotaur: Failed to construct problem.")
+    #else
+     #   return(MinotaurProblem(ret, n, m, eval_f, eval_g, eval_grad_f, eval_jac_g, eval_h, nzJac, nzHess))
+    #end
+    return Int32(1)
 end
 
 function solveProblem(prob::MinotaurProblem)

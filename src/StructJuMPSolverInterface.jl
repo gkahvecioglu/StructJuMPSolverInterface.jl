@@ -4,7 +4,7 @@
 
 module StructJuMPSolverInterface
 
-import MPI
+#import MPI
 
 # Struct Model interface
 abstract ModelInterface
